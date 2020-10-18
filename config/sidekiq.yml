@@ -1,0 +1,5 @@
+concurrency: 5
+staging:
+  :concurrency: 10 # This should be same as pool size in database.yml
+production:
+  :concurrency: 10
