@@ -9,31 +9,31 @@ class TextMessageDeliverJob < ApplicationJob
 
     msg = start_job(id)
     return unless msg
+
     Sidekiq.logger.info "Started processing text_message: #{id}"
-
-
     message_id, duration = send_request(provider.url, msg)
-    Sidekiq.logger.info "request sent for text_message: #{id}"
+    Sidekiq.logger.info "Request sent to provider #{provider.id} for text_message: #{id}"
     provider.add_response_log(id, duration)
     unless message_id
       msg.request_failed!
+      Sidekiq.logger.info "#{provider.id} is offline."
       raise Sms::Client::SmsProviderOfflineError
     end
     msg.update!(status: :requested, message_id: message_id)
-    Sidekiq.logger.info "text_message: #{id} request was accepted by remote SMS provider, message_id:#{message_id}"
+    Sidekiq.logger.info "text_message: #{id} request was accepted by remote SMS provider #{provider.id}, message_id:#{message_id}"
   end
 
   # fetch the job, and mark it as started
   # receives the TextMessage id
-  # returns the TextMessage if valid, false otherwise
+  # returns the TextMessage if valid, nil otherwise
   def start_job(id)
     msg = TextMessage.find_by!(id: id, status: %i[queued request_failed])
     msg.started!
     msg
   rescue ActiveRecord::RecordNotFound, ActiveRecord::StaleObjectError => e
-    Sidekiq.logger.info e.message
-    Sidekiq.logger.info e.backtrace.join("\n")
-    false
+    Sidekiq.logger.error e.message
+    Sidekiq.logger.error e.backtrace.join("\n")
+    nil
   end
 
   # send the request to SMS service provider
@@ -42,7 +42,7 @@ class TextMessageDeliverJob < ApplicationJob
   def send_request(provider_url, msg)
     client = Sms::Client.new(token: ENV['SMS_ACCESS_TOKEN'])
     callback_url = SmsProvider::DEFAULT_CALLBACK_URL
-    data = { id: msg.id, message: msg.message, callback_url: callback_url }
+    data = { to_number: msg.to_number, message: msg.message, callback_url: callback_url }
     response = client.post(provider_url, data)
     message_id = Oj.load(response.body)&.fetch('message_id')&.strip
     message_id = nil if message_id&.empty? # in case sms service provider returns empty message_id;

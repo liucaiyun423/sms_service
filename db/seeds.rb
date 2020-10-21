@@ -5,7 +5,7 @@
 #
 #   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
 #   Character.create(name: 'Luke', movie: movies.first)
-SmsProvider.first_or_create(url: "https://jo3kcwlvke.execute-api.us-west-2.amazonaws.com/dev/provider1",
+SmsProvider.find_or_create_by!(url: "https://jo3kcwlvke.execute-api.us-west-2.amazonaws.com/dev/provider1",
                             redis_key_prefix: "primary")
-SmsProvider.first_or_create(url: "https://jo3kcwlvke.execute-api.us-west-2.amazonaws.com/dev/provider2",
+SmsProvider.find_or_create_by!(url: "https://jo3kcwlvke.execute-api.us-west-2.amazonaws.com/dev/provider2",
                             redis_key_prefix: "secondary")

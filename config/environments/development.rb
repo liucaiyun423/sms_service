@@ -19,6 +19,8 @@ Rails.application.configure do
       host: 'localhost',
       port: 6379
     }
+    config.hosts << "4a2b2b598eac"
+    config.sms_callback_url = 'http://4a2b2b598eac.ngrok.io/delivery_status'
     config.active_record.cache_versioning = false
     config.public_file_server.headers = {
       'Cache-Control' => "public, max-age=#{2.days.to_i}"

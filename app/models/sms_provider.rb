@@ -2,10 +2,10 @@ class SmsProvider < ApplicationRecord
   # 1) serves as configuration model for Text Service provider
   # 2) manages the corresponding response time log in Redis
   ROLLING_PERIOD_IN_SECONDS = ENV['SMS_ROLLING_PERIOD_IN_SECONDS'] || 60
-  DEFAULT_CALLBACK_URL = ENV['SMS_CALLBACK_URL'] || '/delivery_status'
+  DEFAULT_CALLBACK_URL = ENV['SMS_CALLBACK_URL'] || (Rails.env.development? ? Rails.configuration.sms_callback_url : '')
 
   NoSmsProviderError = Class.new(StandardError)
-  # id: any uniq string to uniquely identify this request.
+  # id: any uniq string to uniquely idenify this request.
   #     in text_message_deliver_job, it is TextMesssage.id in postgres
   # set the expiration time to rolling period,
   # letting redis server handles cleanup of expiring old entries.
@@ -16,7 +16,7 @@ class SmsProvider < ApplicationRecord
 
   def calc_provider_rolling_average
     r = Redis.new
-    keys = r.keys(redis_key_prefix)
+    keys = r.keys(redis_key_prefix + '*')
     # when there is no response time entry,
     # give it higher priority, return 0
     return 0 if keys.empty?

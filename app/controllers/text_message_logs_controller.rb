@@ -9,6 +9,6 @@ class TextMessageLogsController < ApplicationController
   private
 
   def text_message_log_params
-    params.permit(:message_id, :status)
+    params.require(:text_message_log).permit(:message_id, :status)
   end
 end
